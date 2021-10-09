@@ -11,10 +11,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -71,7 +70,6 @@ public class ExcelHelper {
     public static List<Hospital> excelToHospitals(InputStream is) {
         try {
             Workbook workbook = new XSSFWorkbook(is);
-
             Sheet sheet = workbook.getSheet(SHEET);
             Iterator<Row> rows = sheet.iterator();
 
@@ -97,39 +95,53 @@ public class ExcelHelper {
 
                     switch (cellIdx) {
                         case 0:
-                            hospital.setSource(currentCell.getStringCellValue());
+                            if (currentCell.getCellTypeEnum() == CellType.STRING) {
+                                hospital.setSource(currentCell.getStringCellValue());
+                            }
                             break;
 
                         case 1:
-                            hospital.setCodeListCode(currentCell.getStringCellValue());
+                            if (currentCell.getCellTypeEnum() == CellType.STRING) {
+                                hospital.setCodeListCode(currentCell.getStringCellValue());
+                            }
                             break;
 
                         case 2:
-                            hospital.setCode(currentCell.getStringCellValue());
+                            if (currentCell.getCellTypeEnum() == CellType.STRING){
+                                hospital.setCode(currentCell.getStringCellValue());
+                            }else{
+                                Double i = currentCell.getNumericCellValue();
+                                hospital.setCode(i.toString());
+                            }
                             break;
 
                         case 3:
-                            hospital.setDisplayValue(currentCell.getStringCellValue());
+                            if (currentCell.getCellTypeEnum() == CellType.STRING) {
+                                hospital.setDisplayValue(currentCell.getStringCellValue());
+                            }
                             break;
                         case 4:
-                            hospital.setLongDescription(currentCell.getStringCellValue());
+                            if (currentCell.getCellTypeEnum() == CellType.STRING) {
+                                hospital.setLongDescription(currentCell.getStringCellValue());
+                            }
                             break;
 
                         case 5:
-                            String str = currentCell.getStringCellValue();
-                            Date date1 = new SimpleDateFormat("dd-MM-yyyy").parse(str);
-                            hospital.setFromDate(date1);
+                            //Date date1 = new SimpleDateFormat("dd-MM-yyyy").parse(String.valueOf());
+                            hospital.setFromDate(currentCell.getDateCellValue());
                             break;
 
                         case 6:
-                            String str1 = currentCell.getStringCellValue();
-                            Date date = new SimpleDateFormat("dd-MM-yyyy").parse(str1);
-                            hospital.setToDate(date);
+                            if (currentCell.getCellTypeEnum() != CellType.STRING) {
+                                //Date date = new SimpleDateFormat("dd-MM-yyyy").parse(String.valueOf(currentCell.getDateCellValue()));
+                                hospital.setFromDate(currentCell.getDateCellValue());
+                            }
                             break;
 
                         case 7:
-                            String str2 = currentCell.getStringCellValue();
-                            hospital.setSortingPriority(Integer.parseInt(str2));
+                            if (currentCell.getCellTypeEnum() == CellType.NUMERIC) {
+                                hospital.setSortingPriority((int) currentCell.getNumericCellValue());
+                            }
                             break;
 
                         default:
@@ -145,7 +157,7 @@ public class ExcelHelper {
             workbook.close();
 
             return hospitals;
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             throw new RuntimeException("fail to parse Excel file: " + e.getMessage());
         }
     }
